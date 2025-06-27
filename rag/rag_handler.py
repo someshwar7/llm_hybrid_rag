@@ -1,14 +1,17 @@
 import chromadb
 from sentence_transformers import SentenceTransformer
+from chromadb.config import Settings
 
-# 1️⃣ Initialize persistent Chroma client
-client = chromadb.PersistentClient(path="./chroma_db")
+# ✅ 1️⃣ Use in-memory client (duckdb+memory)
+client = chromadb.Client(
+    Settings(chroma_db_impl="duckdb+memory", persist_directory=None)
+)
 collection = client.get_or_create_collection("resume_collection")
 
-# 2️⃣ Load embedder
+# ✅ 2️⃣ Load embedder
 embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-# 3️⃣ Your resume chunks
+# ✅ 3️⃣ Your resume chunks
 resume_chunks = [
     "Someshwar V, email: somesh1812004@gmail.com, phone: +91-9789720388, LinkedIn: linkedin.com/in/someshwar-v-56a0b7256, GitHub: github.com/someshwar7",
     "Education: B.E. in Computer Science and Engineering (2022-Present) at St. Joseph’s College of Engineering, Chennai. HSC 85.6%, SSLC 92.2%",
@@ -20,16 +23,16 @@ resume_chunks = [
     "Certifications: NPTEL Data Science for Engineers, DBMS; Coursera: Intro to Data Science, Probability/Statistics; Udemy: Streamlit ML deployment."
 ]
 
-# 4️⃣ IDs for the chunks
+# ✅ 4️⃣ IDs for the chunks
 ids = [f"chunk_{i}" for i in range(len(resume_chunks))]
 
-# 5️⃣ Populate DB
+# ✅ 5️⃣ Populate DB
 def populate_resume_db():
     embeddings = embedder.encode(resume_chunks).tolist()
     collection.upsert(documents=resume_chunks, embeddings=embeddings, ids=ids)
     print("✅ Resume loaded into vector DB!")
 
-# 6️⃣ Query DB
+# ✅ 6️⃣ Query DB
 def query_vector_db(query, n_results=3):
     query_embedding = embedder.encode([query]).tolist()[0]
     results = collection.query(query_embeddings=[query_embedding], n_results=n_results)
@@ -37,7 +40,7 @@ def query_vector_db(query, n_results=3):
         return "\n".join(results["documents"][0])
     return "No matching info found."
 
-# 7️⃣ DEBUG + TEST
+# ✅ 7️⃣ DEBUG + TEST
 if __name__ == "__main__":
     populate_resume_db()
     query = "What are Someshwar's skills?"
