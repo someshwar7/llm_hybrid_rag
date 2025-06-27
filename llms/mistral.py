@@ -1,11 +1,29 @@
 import subprocess
+import requests
+import os
 
 def query_mistral(user_input):
-    try:
+    """
+    This function checks an ENV variable to decide:
+    - LOCAL: use subprocess to run ollama directly.
+    - REMOTE: use Cloudflare tunnel with requests.
+    """
+    mode = os.getenv("OLLAMA_MODE", "LOCAL").upper()
+
+    if mode == "REMOTE":
+        response = requests.post(
+            "https://show-had-engineers-fact.trycloudflare.com/api/generate",
+            json={
+                "model": "mistral",
+                "prompt": user_input
+            }
+        )
+        response.raise_for_status()
+        return response.json()["response"]
+
+    else:
         result = subprocess.run(
             ["ollama", "run", "mistral", user_input],
             capture_output=True, text=True, check=True, encoding='utf-8', errors='replace'
         )
-        return f"[Mistral]\n{result.stdout.strip()}"
-    except subprocess.CalledProcessError as e:
-        return f"[Mistral Error] {e.stderr.strip()}"
+        return result.stdout
