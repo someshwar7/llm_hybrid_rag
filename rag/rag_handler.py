@@ -1,17 +1,11 @@
-import chromadb
 from sentence_transformers import SentenceTransformer
-from chromadb.config import Settings
+import faiss
+import numpy as np
 
-# ✅ 1️⃣ Use in-memory client (duckdb+memory)
-client = chromadb.Client(
-    Settings(chroma_db_impl="duckdb+memory", persist_directory=None)
-)
-collection = client.get_or_create_collection("resume_collection")
-
-# ✅ 2️⃣ Load embedder
+# Load embedder
 embedder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-# ✅ 3️⃣ Your resume chunks
+# Your resume chunks
 resume_chunks = [
     "Someshwar V, email: somesh1812004@gmail.com, phone: +91-9789720388, LinkedIn: linkedin.com/in/someshwar-v-56a0b7256, GitHub: github.com/someshwar7",
     "Education: B.E. in Computer Science and Engineering (2022-Present) at St. Joseph’s College of Engineering, Chennai. HSC 85.6%, SSLC 92.2%",
@@ -23,27 +17,26 @@ resume_chunks = [
     "Certifications: NPTEL Data Science for Engineers, DBMS; Coursera: Intro to Data Science, Probability/Statistics; Udemy: Streamlit ML deployment."
 ]
 
-# ✅ 4️⃣ IDs for the chunks
-ids = [f"chunk_{i}" for i in range(len(resume_chunks))]
+# Create embeddings
+embeddings = embedder.encode(resume_chunks).astype(np.float32)
 
-# ✅ 5️⃣ Populate DB
-def populate_resume_db():
-    embeddings = embedder.encode(resume_chunks).tolist()
-    collection.upsert(documents=resume_chunks, embeddings=embeddings, ids=ids)
-    print("✅ Resume loaded into vector DB!")
+# Create FAISS index
+dimension = embeddings.shape[1]
+index = faiss.IndexFlatL2(dimension)
+index.add(embeddings)
 
-# ✅ 6️⃣ Query DB
-def query_vector_db(query, n_results=3):
-    query_embedding = embedder.encode([query]).tolist()[0]
-    results = collection.query(query_embeddings=[query_embedding], n_results=n_results)
-    if results and "documents" in results and results["documents"]:
-        return "\n".join(results["documents"][0])
-    return "No matching info found."
+# Store chunks
+chunks = resume_chunks
 
-# ✅ 7️⃣ DEBUG + TEST
+def query_vector_db(query, k=3):
+    query_embedding = embedder.encode([query]).astype(np.float32)
+    D, I = index.search(query_embedding, k)
+    results = [chunks[i] for i in I[0]]
+    return "\n".join(results)
+
+# DEBUG
 if __name__ == "__main__":
-    populate_resume_db()
-    query = "What are Someshwar's skills?"
-    print("\n🔍 Querying:", query)
-    answer = query_vector_db(query)
-    print("\n📌 Retrieved:\n", answer)
+    print("✅ FAISS index ready")
+    test_query = "What are Someshwar's skills?"
+    print("Query:", test_query)
+    print(query_vector_db(test_query))
