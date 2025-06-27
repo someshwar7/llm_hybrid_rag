@@ -5,7 +5,7 @@ import os
 def query_mistral(user_input):
     """
     This function checks an ENV variable to decide:
-    - LOCAL: use subprocess to run ollama directly.
+    - LOCAL: use subprocess to run Ollama directly.
     - REMOTE: use Cloudflare tunnel with requests.
     """
     mode = os.getenv("OLLAMA_MODE", "LOCAL").upper()
@@ -23,7 +23,7 @@ def query_mistral(user_input):
 
     else:
         result = subprocess.run(
-            ["ollama", "run", "mistral", user_input],
+            [r"C:\Users\somes\AppData\Local\Programs\Ollama\ollama.exe", "run", "mistral", user_input],
             capture_output=True, text=True, check=True, encoding='utf-8', errors='replace'
         )
-        return result.stdout
+        return result.stdout.strip()
