@@ -5,7 +5,7 @@ def query_mistral(user_input):
     Always use the remote Cloudflare tunnel for Mistral.
     """
     response = requests.post(
-        "https://toolbar-thorough-families-pcs.trycloudflare.com/api/generate",
+        "https://remedies-telling-di-continent.trycloudflare.com/api/generate",
         json={
             "model": "mistral",
             "prompt": user_input
