@@ -1,29 +1,16 @@
-import subprocess
 import requests
-import os
+import subprocess  # Imported but not used
 
 def query_codelama(user_input):
     """
-    This function checks an ENV variable to decide:
-    - LOCAL: use subprocess to run Ollama directly.
-    - REMOTE: use Cloudflare tunnel with requests.
+    Always use the remote Cloudflare tunnel for CodeLlama.
     """
-    mode = os.getenv("OLLAMA_MODE", "LOCAL").upper()
-
-    if mode == "REMOTE":
-        response = requests.post(
-            "https://show-had-engineers-fact.trycloudflare.com/api/generate",
-            json={
-                "model": "codellama",
-                "prompt": user_input
-            }
-        )
-        response.raise_for_status()
-        return response.json()["response"]
-
-    else:
-        result = subprocess.run(
-            [r"C:\Users\somes\AppData\Local\Programs\Ollama\ollama.exe", "run", "codellama", user_input],
-            capture_output=True, text=True, check=True, encoding='utf-8', errors='replace'
-        )
-        return result.stdout.strip()
+    response = requests.post(
+        "https://show-had-engineers-fact.trycloudflare.com/api/generate",
+        json={
+            "model": "codellama",
+            "prompt": user_input
+        }
+    )
+    response.raise_for_status()
+    return response.json()["response"]
